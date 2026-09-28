@@ -1,0 +1,25 @@
+# Render Blueprint for the POS backend (API + Socket.IO).
+# Database is hosted on Neon (set DATABASE_URL below in the dashboard).
+services:
+  - type: web
+    name: pos-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm ci && npm run build && npx prisma generate
+    startCommand: npx prisma migrate deploy && npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true # Render generates a strong secret automatically
+      - key: JWT_EXPIRES_IN
+        value: 12h
+      # Set these in the Render dashboard (marked sync:false = not committed):
+      - key: DATABASE_URL # Neon connection string (?sslmode=require)
+        sync: false
+      - key: CORS_ORIGIN # your Vercel frontend URL, e.g. https://pos-xxx.vercel.app
+        sync: false
+      - key: STORE_NAME
+        sync: false

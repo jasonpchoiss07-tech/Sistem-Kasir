@@ -1,0 +1,245 @@
+// Prisma schema for POS Toko Bangunan
+// Docs: https://pris.ly/d/prisma-schema
+//
+// Money is stored as Decimal(14,2) (NUMERIC in PostgreSQL) and surfaced by
+// Prisma as Decimal.js instances — never JavaScript floating point.
+// Additional invariants (stock >= 0, quantity > 0, returnedQty <= quantity,
+// etc.) are enforced with CHECK constraints added in the migration SQL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────
+
+enum Role {
+  OWNER
+  KASIR
+}
+
+enum TransactionType {
+  BELI_LANGSUNG
+  PENGIRIMAN
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+}
+
+enum ShipmentStatus {
+  MENUNGGU_DIKIRIM
+  SEDANG_DIKIRIM
+  SUDAH_DIKIRIM
+  DIBATALKAN
+}
+
+enum StockAdjustmentType {
+  STOCK_IN // barang masuk (menambah stok)
+  ADJUSTMENT // koreksi manual (bisa + / -)
+}
+
+// ─────────────────────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────────────────────
+
+/// System users. Exactly two roles: OWNER (full control) and KASIR (sales only).
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  username     String   @unique
+  passwordHash String
+  role         Role
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // A user (KASIR or OWNER) can be the cashier on many transactions.
+  transactions Transaction[] @relation("CashierTransactions")
+  // Returns are performed by the OWNER.
+  returns          Return[]          @relation("OwnerReturns")
+  auditLogs        AuditLog[]
+  stockAdjustments StockAdjustment[]
+
+  @@index([role])
+}
+
+/// Store products. `edx` is the internal code that encodes cost/modal
+/// (there is no numeric cost price). Products are never hard-deleted once
+/// referenced by a transaction; `isActive` provides soft deletion instead.
+model Product {
+  id        String   @id @default(cuid())
+  name      String
+  edx       String // internal code (represents modal), visible in-app only
+  photoUrl  String?
+  unit      String // Sak, Batang, Kg, Meter, Dus, Pcs, Liter, ...
+  sellPrice Decimal  @db.Decimal(14, 2)
+  stock     Int      @default(0) // enforced >= 0 via CHECK constraint
+  minStock  Int      @default(0) // enforced >= 0 via CHECK constraint
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactionItems TransactionItem[]
+  stockAdjustments StockAdjustment[]
+
+  @@index([name])
+  @@index([edx])
+  @@index([isActive])
+}
+
+/// Traceable log of every manual stock change (stock-in or correction).
+/// `quantityChange` is signed (+ adds stock, - removes), and `resultingStock`
+/// snapshots the stock after applying the change.
+model StockAdjustment {
+  id             String              @id @default(cuid())
+  productId      String
+  userId         String?
+  type           StockAdjustmentType
+  quantityChange Int
+  resultingStock Int
+  note           String?
+  createdAt      DateTime            @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+/// Customers are only needed for delivery (PENGIRIMAN) transactions.
+/// Name + address are required; WhatsApp is optional.
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  whatsapp  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@index([name])
+}
+
+/// A completed sale. Immutable header preserved permanently as history.
+/// `cashReceived` / `change` are nullable to support UNPAID delivery orders
+/// where cash has not been received yet.
+model Transaction {
+  id           String          @id @default(cuid())
+  trxNumber    String          @unique // e.g. TRX-20260826-0001
+  type         TransactionType
+  total        Decimal         @db.Decimal(14, 2)
+  cashReceived Decimal?        @db.Decimal(14, 2)
+  change       Decimal?        @db.Decimal(14, 2)
+  createdAt    DateTime        @default(now())
+
+  cashierId  String
+  cashier    User      @relation("CashierTransactions", fields: [cashierId], references: [id], onDelete: Restrict)
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  items    TransactionItem[]
+  shipment Shipment?
+  returns  Return[]
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([cashierId])
+  @@index([customerId])
+}
+
+/// Line items with a price/name/unit snapshot taken at checkout time so the
+/// history and receipts stay accurate even if the product changes later.
+/// `returnedQty` tracks how much of this line has been returned (0..quantity).
+model TransactionItem {
+  id                  String  @id @default(cuid())
+  transactionId       String
+  productId           String
+  productNameSnapshot String
+  unitSnapshot        String
+  sellPriceSnapshot   Decimal @db.Decimal(14, 2)
+  quantity            Int // enforced > 0 via CHECK constraint
+  subtotal            Decimal @db.Decimal(14, 2)
+  returnedQty         Int     @default(0) // enforced 0 <= returnedQty <= quantity
+
+  transaction Transaction  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product     Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  returnItems ReturnItem[]
+
+  @@index([transactionId])
+  @@index([productId])
+}
+
+/// Delivery info for PENGIRIMAN transactions (one-to-one with Transaction).
+model Shipment {
+  id             String         @id @default(cuid())
+  transactionId  String         @unique
+  paymentStatus  PaymentStatus  @default(UNPAID)
+  shipmentStatus ShipmentStatus @default(MENUNGGU_DIKIRIM)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([paymentStatus])
+  @@index([shipmentStatus])
+}
+
+/// A return performed by the OWNER against an original transaction.
+/// The original transaction is never deleted; returns add stock back.
+model Return {
+  id            String   @id @default(cuid())
+  transactionId String
+  ownerId       String
+  reason        String?
+  createdAt     DateTime @default(now())
+
+  transaction Transaction  @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  owner       User         @relation("OwnerReturns", fields: [ownerId], references: [id], onDelete: Restrict)
+  items       ReturnItem[]
+
+  @@index([transactionId])
+  @@index([ownerId])
+  @@index([createdAt])
+}
+
+/// Individual returned line, traceable to the original TransactionItem.
+model ReturnItem {
+  id                String @id @default(cuid())
+  returnId          String
+  transactionItemId String
+  quantity          Int // enforced > 0 via CHECK constraint
+
+  return          Return          @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  transactionItem TransactionItem @relation(fields: [transactionItemId], references: [id], onDelete: Restrict)
+
+  @@index([returnId])
+  @@index([transactionItemId])
+}
+
+/// Append-only audit trail for traceability of important actions.
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}

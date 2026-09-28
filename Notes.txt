@@ -1,0 +1,30 @@
+Step 5 — Product + Stock Management selesai (backend + frontend) dan terverifikasi. Server dibiarkan hidup, coba di http://localhost:5173.
+
+Yang dibangun
+Backend (/api/products)
+
+GET / — list + search (nama/EDX) + filter (status, lowStock). Kasir otomatis hanya lihat produk aktif.
+GET /:id — detail
+POST / — tambah produk (Owner)
+PATCH /:id — edit + aktif/nonaktif (Owner)
+POST /:id/stock-adjustments — barang masuk / koreksi stok (Owner), atomik + tercatat
+GET /:id/stock-adjustments — riwayat penyesuaian stok (Owner)
+POST /upload — unggah foto ke uploads/ (multer, maks 5MB, hanya gambar) (Owner)
+Model baru StockAdjustment (tipe STOCK_IN/ADJUSTMENT, delta bertanda, stok hasil, catatan, user, waktu) → traceability. Migrasi add_stock_adjustment + CHECK resultingStock >= 0.
+Frontend
+
+Halaman Produk responsif (grid kartu: foto, nama, EDX, satuan, harga, stok, badge "Menipis" & "Nonaktif").
+Owner: tombol Tambah, filter status + "Stok menipis", aksi Edit / Stok / Aktif-Nonaktif per produk.
+Modal Tambah/Edit (foto upload + preview, nama, EDX, satuan dengan saran + bebas ketik, harga jual, stok awal, stok minimum, status aktif).
+Modal Sesuaikan Stok (Barang Masuk / Koreksi +/−, preview stok hasil, tolak jika negatif).
+Kasir: halaman yang sama tapi read-only (hanya lihat + search, tanpa tombol aksi). Menu
+
+-----------------------------------------------------------------------
+Cara lanjut besok
+Nyalakan PostgreSQL (kalau komputer sempat restart):
+powershell
+
+& "D:\pgtools\pgsql\bin\pg_ctl.exe" -D "D:\pgtools\data" -o "-p 5432" -l "D:\pgtools\server.log" start
+Jalankan backend: cd backend; npm run dev — dan frontend: cd frontend; npm run dev
+Bilang saja "lanjut Step 7", nanti saya mulai dari halaman Pengiriman.
+Catatan: data demo masih ada (produk Semen & Paku, beberapa transaksi, pelanggan Budi & Andi, 3 retur). Sampai besok!

@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment
+.env
+.env.local
+*.env
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Prisma
+prisma/*.db
+
+# Uploads (local file storage during development)
+backend/uploads/*
+!backend/uploads/.gitkeep

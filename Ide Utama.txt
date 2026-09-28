@@ -1,0 +1,703 @@
+go, rust, kotlin, typescript
+
+1. Tujuan Utama
+
+Membuat sistem kasir berbasis web untuk toko bangunan yang:
+
+Mudah digunakan kasir.
+Owner punya kontrol penuh.
+Bisa digunakan di PC/laptop, HP, dan tablet.
+Tampilan responsive.
+Semua device menggunakan sistem yang sama.
+Data tersimpan di satu database.
+Perubahan data bisa realtime.
+Bisa diakses dari mana saja melalui internet.
+Bisa di-install seperti aplikasi melalui PWA.
+Bisa terhubung ke printer thermal untuk mencetak struk.
+History transaksi tidak hilang.
+2. Role Pengguna
+
+Ada 2 role.
+
+👑 Owner
+
+Owner memiliki akses penuh.
+
+Bisa:
+
+Dashboard
+Melihat penjualan
+Melihat history
+Melihat detail transaksi
+Retur barang
+Mengelola produk
+Mengelola stok
+Melihat harga modal
+Melihat harga jual
+Mengelola pelanggan
+Melihat pengiriman
+Melihat laporan
+Backup/data management
+Mengelola akun kasir
+🧑‍💼 Kasir
+
+Kasir hanya fokus menjual.
+
+Bisa:
+
+Login
+Melihat produk
+Search produk
+Melihat foto
+Melihat nama
+Melihat EDX
+Melihat harga jual
+Melihat stok
+Masukkan barang ke keranjang
+Mengubah jumlah
+Checkout
+Pembayaran cash
+Cetak struk
+
+Kasir tidak bisa sembarangan:
+
+Mengubah harga
+Mengubah stok
+Menghapus transaksi
+Melakukan pengaturan Owner
+Melihat informasi keuangan sensitif
+3. Produk
+
+Kita tidak menggunakan kode barang seperti SMN-001.
+
+Format yang kamu mau:
+
+Semen Tiga Roda — EDX
+
+Data produk:
+
+Foto produk
+Nama barang
+Kode/inisial seperti EDX
+Satuan
+Harga modal
+Harga jual
+Stok
+Stok minimum
+
+Contoh:
+
+Semen Tiga Roda — EDX
+Rp65.000 / Sak
+Stok: 50
+
+EDX merupakan informasi internal yang kamu gunakan berkaitan dengan modal.
+
+EDX boleh terlihat di aplikasi Owner dan Kasir.
+
+Tetapi:
+
+❌ EDX tidak masuk struk.
+❌ Harga modal tidak masuk struk.
+
+4. Satuan
+
+Karena ini toko bangunan, satuan harus fleksibel.
+
+Contoh:
+
+Sak
+Batang
+Kg
+Meter
+Dus
+Pcs
+Liter
+dll.
+
+Nanti kita bisa menentukan apakah perlu konversi satuan, misalnya:
+
+1 dus = 12 pcs.
+
+5. Sistem Stok
+
+Stok tidak boleh minus.
+
+Contoh:
+
+Stok = 5
+
+Kasir mencoba menjual:
+
+6
+
+Maka:
+
+❌ Ditolak.
+
+Sistem menampilkan:
+
+Stok tidak mencukupi. Tersedia 5.
+
+Stok berkurang setelah checkout berhasil.
+
+Retur akan mengembalikan stok.
+
+6. Halaman Kasir
+
+Kasir melihat produk dalam bentuk card/list dengan foto.
+
+Contoh:
+
+🖼️ Semen Tiga Roda — EDX
+Rp65.000 / Sak
+Stok: 50
+[+ Keranjang]
+
+Kasir bisa:
+
+Search → pilih produk → masukkan keranjang → atur jumlah → checkout.
+
+7. Awal Transaksi
+
+Setiap transaksi baru dimulai dengan pilihan:
+
+🛍️ Beli Langsung
+
+Pelanggan datang dan membawa barang sendiri.
+
+Tidak perlu nama pelanggan.
+
+Alur:
+
+Beli Langsung → Produk → Keranjang → Cash → Checkout → Struk.
+
+🚚 Pesan + Kirim
+
+Pelanggan meminta barang dikirim.
+
+Kasir mengisi:
+
+Nama pelanggan — wajib
+Alamat — wajib
+No. WhatsApp — opsional
+Barang
+Jumlah
+8. Pembayaran
+
+Untuk sekarang hanya Cash.
+
+Contoh:
+
+Total: Rp190.000
+Cash: Rp200.000
+Kembalian: Rp10.000
+
+Kalau cash kurang:
+
+❌ Checkout ditolak.
+
+9. Pengiriman
+
+Pesanan kirim mempunyai status pembayaran:
+
+Sudah Bayar
+
+Pelanggan sudah membayar.
+
+Belum Bayar
+
+Pesanan sudah dibuat tetapi pembayaran belum diterima.
+
+Status pengiriman:
+
+Menunggu dikirim
+Sedang dikirim
+Sudah dikirim
+Dibatalkan
+10. Receipt / Struk
+
+Setiap checkout mendapatkan nomor unik.
+
+Contoh:
+
+TRX-20260826-0001
+
+Struk berisi:
+
+Nama toko
+Nomor transaksi
+Tanggal & jam
+Kasir
+Pelanggan jika transaksi pengiriman
+Barang
+Jumlah
+Satuan
+Harga jual
+Subtotal
+Total
+Cash
+Kembalian
+
+Tidak ada:
+
+EDX
+Harga modal
+Informasi internal lainnya
+
+Struk dapat dicetak melalui printer thermal.
+
+11. History Penjualan
+
+Setiap checkout disimpan permanen.
+
+History tidak hilang ketika:
+
+Logout
+Tutup aplikasi
+Restart komputer
+Hari berganti
+
+Owner bisa mencari berdasarkan:
+
+Hari ini
+Kemarin
+Minggu lalu
+Bulan lalu
+Rentang tanggal
+Nomor transaksi
+
+History dipisahkan:
+
+🛍️ Beli Langsung
+
+Transaksi pelanggan yang membeli langsung.
+
+🚚 Pengiriman
+
+Transaksi yang perlu dikirim.
+
+12. Retur
+
+Owner membuka:
+
+History → pilih transaksi → Retur
+
+Contoh:
+
+Transaksi:
+
+Semen × 5
+
+Pelanggan mengembalikan:
+
+Semen × 2
+
+Maka:
+
+Stok +2
+
+Transaksi asli tidak dihapus.
+
+Sistem mencatat:
+
+Barang yang diretur
+Jumlah
+Waktu retur
+Owner yang melakukan retur
+
+Jadi history tetap memiliki jejak lengkap.
+
+13. Pelanggan
+
+Data pelanggan sengaja dibuat sederhana.
+
+Hanya:
+
+Customer ID
+Nama
+Alamat
+No. WhatsApp
+
+Tidak perlu CRM yang rumit.
+
+Untuk pembelian langsung:
+
+Tidak perlu input pelanggan.
+
+Untuk pengiriman:
+
+Nama + alamat wajib.
+WA opsional.
+
+14. Dashboard Owner
+
+Owner bisa melihat:
+
+Penjualan
+Penjualan hari ini
+Jumlah transaksi
+Barang terjual
+Penjualan 7 hari
+Penjualan bulanan
+Produk
+Semua produk
+Stok
+Harga modal
+Harga jual
+Produk stok menipis
+History
+Semua transaksi
+Detail receipt
+Retur
+Pengiriman
+Pelanggan
+Data pelanggan
+Riwayat pembelian
+15. Database
+
+Karena sekarang requirement-nya:
+
+Banyak device + realtime + bisa dari mana saja
+
+kita tidak menggunakan SQLite sebagai database utama.
+
+Kita gunakan:
+
+PostgreSQL
+
+Database berada di server/cloud.
+
+Gambaran:
+
+                    ☁️ CLOUD
+                       │
+                 PostgreSQL
+                       │
+                    Backend
+                       │
+              ─────────┼─────────
+              │        │         │
+             PC       HP       Tablet
+
+Dengan begitu semua device membaca data yang sama.
+
+16. Realtime
+
+Misalnya kasir checkout:
+
+Semen × 2
+
+Stok:
+
+50 → 48
+
+Owner yang sedang membuka dashboard bisa langsung melihat:
+
+48
+
+tanpa harus refresh manual.
+
+Penjualan juga bisa langsung masuk ke dashboard Owner.
+
+Teknologinya bisa menggunakan:
+
+WebSocket / realtime service
+
+17. Bisa Dibuka di Mana Saja
+
+Karena sistem di-deploy ke server:
+
+          ☁️ SERVER
+              │
+        ───── Internet ─────
+        │        │          │
+       💻       📱         📱
+     Laptop     HP       Tablet
+
+Semua membuka aplikasi yang sama.
+
+Contohnya:
+
+app.namatoko.com
+
+Owner bisa login dari rumah menggunakan HP.
+
+Kasir login dari PC toko.
+
+Data tetap satu.
+
+18. Bisa Jadi Aplikasi
+
+Kita buat sebagai:
+
+PWA — Progressive Web App
+
+Jadi website bisa di-install.
+
+HP:
+
+Website → Install → icon aplikasi
+
+PC/laptop:
+
+Install → icon aplikasi
+
+Tidak perlu membuat aplikasi Android dan website secara terpisah.
+
+Satu codebase.
+
+19. Responsive
+
+UI dibuat mobile-first dan responsive.
+
+Mendukung:
+
+📱 HP
+📱 Tablet
+💻 Laptop
+🖥️ Desktop
+
+Bukan cuma mengecilkan tampilan, tetapi layout akan menyesuaikan ukuran layar.
+
+20. Printer Thermal
+
+Untuk PC kasir:
+
+Web App
+   ↓
+Print mechanism
+   ↓
+🖨️ Thermal Printer
+
+Tombol:
+
+Cetak Struk
+
+Dan Owner bisa:
+
+History → transaksi → Cetak Ulang
+
+Printer yang ideal nanti kita tentukan berdasarkan koneksi yang tersedia, misalnya USB/LAN.
+
+21. Backup
+
+Karena data utama berada di cloud:
+
+Database tidak bergantung pada PC kasir.
+PC rusak → data tetap aman.
+Tetap perlu backup database otomatis.
+
+Kita bisa membuat:
+
+Automatic Backup
+
+dan:
+
+Manual Backup oleh Owner
+
+22. Tech Stack
+
+Untuk teknologi, rancangan awal saya:
+
+Frontend
+
+React + TypeScript
+
+Untuk UI dan interaksi aplikasi.
+
+Styling
+
+Tailwind CSS
+
+Untuk responsive UI dan desain.
+
+Backend
+
+Node.js
+
+Untuk API, authentication, transaksi, stok, dan business logic.
+
+Database
+
+PostgreSQL
+
+Untuk menyimpan:
+
+User
+Produk
+Stok
+Pelanggan
+Transaksi
+Detail transaksi
+Retur
+Pengiriman
+History
+Realtime
+
+WebSocket atau service realtime.
+
+Authentication
+
+Login:
+
+Owner / Kasir
+
+dengan sistem role & permission.
+
+Password disimpan menggunakan hash, bukan plaintext.
+
+File Storage
+
+Foto produk disimpan di object/cloud storage, sedangkan database menyimpan referensi fotonya.
+
+PWA
+
+Aplikasi bisa di-install di:
+
+Android
+iPhone
+Tablet
+Laptop
+Desktop
+Deployment
+
+Nanti:
+
+Frontend + Backend + PostgreSQL → Cloud
+
+23. Development vs Production
+
+Kita tidak langsung deploy ketika mulai coding.
+
+Saat development:
+Laptop kita
+   ↓
+localhost
+   ↓
+React
+Node.js
+PostgreSQL lokal
+
+Semua fitur kita bangun dan tes dulu.
+
+Setelah siap:
+                    ☁️ CLOUD
+              Frontend + Backend
+                     │
+                 PostgreSQL
+                     │
+              Internet / HTTPS
+                     │
+        ┌────────────┼────────────┐
+        ↓            ↓            ↓
+       PC           HP         Tablet
+      Kasir        Owner
+
+Baru kita deploy.
+
+24. Urutan pembangunan
+
+Saya sarankan jangan langsung mengerjakan semuanya sekaligus.
+
+Urutannya:
+
+Tahap 1 — Foundation
+
+Setup project
+React
+TypeScript
+Backend
+PostgreSQL
+Authentication
+
+Tahap 2 — User
+
+Login
+Role Owner
+Role Kasir
+Permission
+
+Tahap 3 — Produk
+
+Tambah produk
+Foto
+Nama
+EDX
+Modal
+Harga jual
+Satuan
+Stok
+
+Tahap 4 — Kasir
+
+Search
+Product card
+Keranjang
+Validasi stok
+Checkout
+Cash
+Receipt
+
+Tahap 5 — History
+
+History transaksi
+Detail receipt
+Filter tanggal
+Beli langsung
+Pengiriman
+
+Tahap 6 — Pelanggan & Pengiriman
+
+Customer
+Alamat
+WA
+Status bayar
+Status pengiriman
+
+Tahap 7 — Retur
+
+Retur dari history
+Stok kembali
+Riwayat retur
+
+Tahap 8 — Dashboard Owner
+
+Penjualan harian
+Mingguan
+Bulanan
+Produk terjual
+Stok
+Laporan
+
+Tahap 9 — Realtime
+
+Sinkronisasi data
+Update stok
+Update transaksi
+
+Tahap 10 — PWA + Printer
+
+Installable app
+Responsive
+Thermal printer
+Reprint receipt
+
+Tahap 11 — Security + Backup
+
+Permission
+Audit/history
+Backup
+Recovery
+
+Tahap 12 — Deployment
+
+Cloud server
+Domain
+HTTPS
+Production database
+Intinya
+
+Kalau saya sederhanakan menjadi satu kalimat:
+
+Kita akan membuat satu web app POS toko bangunan berbasis React + TypeScript, backend Node.js, PostgreSQL sebagai database cloud, realtime synchronization, responsive/PWA untuk semua device, dan integrasi printer thermal untuk kasir.

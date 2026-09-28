@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* Print: only the receipt is visible, sized for thermal paper (58–80mm). */
+@page {
+  size: 80mm auto;
+  margin: 3mm;
+}
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .receipt-print,
+  .receipt-print * {
+    visibility: visible;
+  }
+  .receipt-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm;
+    padding: 0;
+    margin: 0;
+    color: #000 !important;
+    font-family: ui-monospace, "Courier New", monospace;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
