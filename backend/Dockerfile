@@ -23,5 +23,7 @@ COPY --from=build /app/dist ./dist
 # Local uploads dir is ephemeral in containers — use object storage in real prod.
 RUN mkdir -p uploads
 EXPOSE 4000
-# Apply migrations, then start. DATABASE_URL / JWT_SECRET / CORS_ORIGIN come from env.
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+# Start the server immediately (fast health check). The server does not touch
+# the DB at boot, so migrations are run separately (once) with
+# `npx prisma migrate deploy` against DATABASE_URL — see DEPLOYMENT.md.
+CMD ["node", "dist/server.js"]
