@@ -1,32 +1,16 @@
 import multer from 'multer';
-import path from 'node:path';
-import fs from 'node:fs';
-import { randomBytes } from 'node:crypto';
+import type { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../utils/ApiError';
-
-/** Absolute path to the local uploads directory (served statically at /uploads). */
-export const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads');
-
-// Ensure the directory exists at startup.
-fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase().slice(0, 10);
-    const name = `product_${Date.now()}_${randomBytes(6).toString('hex')}${ext}`;
-    cb(null, name);
-  },
-});
-
 /**
- * Multer instance for a single product image.
+ * Multer with in-memory storage (no local disk write here) so the buffer can be
+ * forwarded to object storage. Safe on serverless (read-only filesystem).
  * Rejects non-image types and files larger than 5 MB.
  */
-export const productImageUpload = multer({
-  storage,
+const productImageUpload = multer({
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (!ALLOWED_MIME.has(file.mimetype)) {
@@ -36,8 +20,6 @@ export const productImageUpload = multer({
     cb(null, true);
   },
 }).single('photo');
-
-import type { Request, Response, NextFunction } from 'express';
 
 /**
  * Wraps the multer middleware so multer-specific errors (e.g. file too large)

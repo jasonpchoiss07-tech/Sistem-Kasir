@@ -3,6 +3,7 @@ import { validate } from '../../utils/validate';
 import { ApiError } from '../../utils/ApiError';
 import { emitRealtime } from '../../realtime/socket';
 import { recordAudit } from '../../services/audit';
+import { storeProductImage } from '../../services/storage';
 import {
   createProductSchema,
   listProductsQuerySchema,
@@ -91,10 +92,15 @@ export async function listAdjustments(req: Request, res: Response): Promise<void
   res.json({ success: true, data: { adjustments } });
 }
 
-/** POST /api/products/upload (OWNER). Returns the stored file URL. */
+/** POST /api/products/upload (OWNER). Uploads to storage, returns the file URL. */
 export async function upload(req: Request, res: Response): Promise<void> {
   if (!req.file) {
     throw ApiError.badRequest('Tidak ada file yang diunggah (field: photo)');
   }
-  res.status(201).json({ success: true, data: { url: `/uploads/${req.file.filename}` } });
+  const url = await storeProductImage({
+    buffer: req.file.buffer,
+    originalname: req.file.originalname,
+    mimetype: req.file.mimetype,
+  });
+  res.status(201).json({ success: true, data: { url } });
 }

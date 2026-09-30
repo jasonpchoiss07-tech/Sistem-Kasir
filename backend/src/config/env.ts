@@ -29,6 +29,17 @@ export const env = {
   },
   // Store name shown on receipts (configurable via env; store settings UI comes later).
   storeName: process.env.STORE_NAME ?? 'POS Toko Bangunan',
+  // Supabase Storage for product images. When SUPABASE_URL is set, uploads go to
+  // object storage (needed on serverless/Vercel). Otherwise files are saved to
+  // the local uploads/ folder (development).
+  supabase: {
+    url: process.env.SUPABASE_URL ?? '',
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+    bucket: process.env.SUPABASE_STORAGE_BUCKET ?? 'product-photos',
+    get enabled() {
+      return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+    },
+  },
   get isProduction() {
     return this.nodeEnv === 'production';
   },

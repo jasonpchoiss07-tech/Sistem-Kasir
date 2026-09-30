@@ -25,7 +25,41 @@ git push -u origin main
    `postgresql://user:pass@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
 3. Simpan — ini `DATABASE_URL`.
 
-## 3) Backend — Render
+## 3) Backend — Koyeb (TANPA kartu kredit) ⭐ direkomendasikan
+Render kini minta verifikasi kartu. Koyeb tidak — daftar cukup pakai GitHub, free tier
+mendukung WebSocket + HTTPS otomatis.
+
+1. Buka koyeb.com → Sign up **with GitHub** (tanpa kartu).
+2. Create → **Web Service** → **GitHub** → pilih repo `pos-toko-bangunan`.
+3. Builder: **Buildpack** (bukan Docker), lalu set:
+   - **Work directory**: `backend`
+   - **Build command**: `npm ci && npm run build && npx prisma generate`
+   - **Run command**: `npx prisma migrate deploy && npm run start`
+4. Instance: pilih **Free**. Region: terdekat (mis. Singapore/Frankfurt).
+5. **Environment variables**:
+   - `NODE_ENV` = `production`
+   - `DATABASE_URL` = connection string Neon (langkah 2)
+   - `JWT_SECRET` = teks acak panjang (mis. hasil `openssl rand -hex 32`)
+   - `JWT_EXPIRES_IN` = `12h`
+   - `STORE_NAME` = nama tokomu
+   - `CORS_ORIGIN` = placeholder dulu (mis. `https://example.com`); diperbaiki di langkah 5
+6. **Port / health check**: port `8000` (Koyeb set env `PORT` otomatis; app kita ikut `PORT`),
+   health check path `/api/health`.
+7. Deploy. Salin URL backend, mis. `https://pos-backend-xxxx.koyeb.app`.
+   Cek `https://.../api/health` → `{"success":true,...}`.
+
+> Catatan: `render.yaml` di repo hanya dipakai kalau suatu saat pindah ke Render — abaikan untuk Koyeb.
+
+<details>
+<summary>Alternatif backend tanpa kartu lainnya</summary>
+
+- **Koyeb** (dipakai di atas) — paling mudah, WS didukung, tanpa kartu.
+- **Railway** — mulus tapi setelah kredit trial biasanya minta kartu.
+- **Google Cloud Run / Oracle Cloud** — gratis tapi butuh kartu untuk aktivasi billing.
+
+</details>
+
+## 3-LAMA) Backend — Render (butuh kartu — lewati bila tak mau)
 1. Buka render.com → New → **Blueprint** → connect repo GitHub kamu.
    (Render membaca `render.yaml`, otomatis bikin service `pos-backend`.)
 2. Saat diminta env vars, isi:

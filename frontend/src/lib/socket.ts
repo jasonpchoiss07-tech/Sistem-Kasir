@@ -11,14 +11,21 @@ export type RealtimeEvent =
 let socket: Socket | null = null;
 
 /**
- * Connects the shared socket using the JWT for handshake auth.
- * Safe to call multiple times; only one connection is kept.
- * In dev, Vite proxies /socket.io to the backend.
+ * Realtime is enabled only when a socket server is reachable. In the Vercel
+ * (serverless) deployment there is no WebSocket server, so realtime is off and
+ * the UI refreshes on navigation/actions instead. Enabled in local dev, or when
+ * explicitly turned on via VITE_REALTIME=on (e.g. a persistent backend host).
  */
-export function connectSocket(token: string): Socket {
+export const REALTIME_ENABLED =
+  import.meta.env.DEV || import.meta.env.VITE_REALTIME === 'on';
+
+/**
+ * Connects the shared socket using the JWT for handshake auth.
+ * No-op when realtime is disabled (returns null). Safe to call multiple times.
+ */
+export function connectSocket(token: string): Socket | null {
+  if (!REALTIME_ENABLED) return null;
   if (socket) return socket;
-  // Empty origin (dev) → same-origin via Vite proxy; in production this is the
-  // backend origin from VITE_API_URL.
   const origin = import.meta.env.VITE_API_URL || '/';
   socket = io(origin, {
     path: '/socket.io',
