@@ -1,5 +1,4 @@
 import { Routes, Route } from 'react-router-dom';
-import { Boxes, BarChart3, Settings } from 'lucide-react';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { ProductsPage } from '@/features/products/ProductsPage';
 import { PosPage } from '@/features/pos/PosPage';
@@ -12,7 +11,6 @@ import { ProtectedRoute } from '@/app/ProtectedRoute';
 import { RoleRoute } from '@/app/RoleRoute';
 import { HomeRedirect } from '@/app/HomeRedirect';
 import { AppLayout } from '@/layouts/AppLayout';
-import { PlaceholderPage } from '@/pages/PlaceholderPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 /**
@@ -21,10 +19,8 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
  * Public:            /login
  * Authenticated:     everything under ProtectedRoute + AppLayout
  *   Shared:          products, transactions history
- *   OWNER-only:      dashboard, customers, delivery, returns, stock, reports, settings
+ *   OWNER-only:      dashboard, customers, delivery, returns
  *   CASHIER-only:    pos
- *
- * Dashboard, stock, reports, settings remain placeholders (built in later steps).
  */
 function App() {
   return (
@@ -47,18 +43,6 @@ function App() {
             <Route path="/customers" element={<CustomersPage />} />
             <Route path="/delivery" element={<DeliveryPage />} />
             <Route path="/returns" element={<ReturnsPage />} />
-            <Route
-              path="/stock"
-              element={<PlaceholderPage title="Stok" icon={Boxes} description="Kelola stok & stok masuk (via halaman Produk)." />}
-            />
-            <Route
-              path="/reports"
-              element={<PlaceholderPage title="Laporan" icon={BarChart3} description="Laporan penjualan." />}
-            />
-            <Route
-              path="/settings"
-              element={<PlaceholderPage title="Pengaturan" icon={Settings} description="Pengaturan toko & akun." />}
-            />
           </Route>
 
           {/* Cashier area */}
