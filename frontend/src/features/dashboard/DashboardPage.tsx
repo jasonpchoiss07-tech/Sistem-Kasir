@@ -58,7 +58,6 @@ export function DashboardPage() {
       {/* Sales */}
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
         <Stat icon={TrendingUp} label="Penjualan Hari Ini" value={formatRupiah(data.sales.today.amount)} accent />
-        <Stat icon={Receipt} label="Transaksi Hari Ini" value={String(data.sales.today.count)} />
         <Stat icon={Package} label="Barang Terjual Hari Ini" value={String(data.sales.today.itemsSold)} />
         <Stat icon={TrendingUp} label="Penjualan 7 Hari" value={formatRupiah(data.sales.last7)} />
         <Stat icon={TrendingUp} label="Penjualan Bulan Ini" value={formatRupiah(data.sales.month)} />
