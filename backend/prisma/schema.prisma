@@ -48,6 +48,11 @@ enum StockAdjustmentType {
   ADJUSTMENT // koreksi manual (bisa + / -)
 }
 
+enum ExpenseCategory {
+  PEMBAYARAN_SALES // pembayaran ke sales / supplier
+  LAINNYA // pengeluaran lain
+}
+
 // ─────────────────────────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────────────────────────
@@ -69,6 +74,7 @@ model User {
   returns          Return[]          @relation("OwnerReturns")
   auditLogs        AuditLog[]
   stockAdjustments StockAdjustment[]
+  expenses         Expense[]
 
   @@index([role])
 }
@@ -227,6 +233,26 @@ model ReturnItem {
 
   @@index([returnId])
   @@index([transactionItemId])
+}
+
+/// Store expenses / money paid out (e.g. "Pembayaran Sales"). Recorded by the
+/// OWNER and surfaced on the dashboard (today's total) and the Laporan history.
+/// `occurredAt` is the business date of the expense (can be back-dated);
+/// `amount` is always positive (money leaving the store).
+model Expense {
+  id         String          @id @default(cuid())
+  category   ExpenseCategory @default(PEMBAYARAN_SALES)
+  amount     Decimal         @db.Decimal(14, 2) // enforced > 0 via CHECK constraint
+  note       String? // e.g. nama sales / keterangan
+  occurredAt DateTime        @default(now())
+  userId     String?
+  createdAt  DateTime        @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([occurredAt])
+  @@index([category])
+  @@index([userId])
 }
 
 /// Append-only audit trail for traceability of important actions.

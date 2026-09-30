@@ -5,6 +5,7 @@ import {
   Users,
   Truck,
   Undo2,
+  BarChart3,
   ShoppingCart,
   History,
   type LucideIcon,
@@ -25,6 +26,7 @@ export const OWNER_NAV: NavItem[] = [
   { to: '/customers', label: 'Pelanggan', icon: Users },
   { to: '/delivery', label: 'Pengiriman', icon: Truck },
   { to: '/returns', label: 'Retur', icon: Undo2 },
+  { to: '/reports', label: 'Laporan', icon: BarChart3 },
 ];
 
 /** Cashier navigation. */

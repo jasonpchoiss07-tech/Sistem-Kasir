@@ -10,6 +10,7 @@ import {
   Truck,
   Users,
   ArrowDownCircle,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 import { useSocketEvent } from '@/hooks/useSocketEvent';
@@ -63,6 +64,7 @@ export function DashboardPage() {
         <Stat icon={TrendingUp} label="Penjualan 7 Hari" value={formatRupiah(data.sales.last7)} />
         <Stat icon={TrendingUp} label="Penjualan Bulan Ini" value={formatRupiah(data.sales.month)} />
         <Stat icon={ArrowDownCircle} label="Uang Keluar (Retur) Hari Ini" value={formatRupiah(data.sales.moneyOutToday)} />
+        <Stat icon={Wallet} label="Pengeluaran Pembayaran Hari Ini" value={formatRupiah(data.sales.expensesToday)} />
       </div>
 
       {/* Products */}

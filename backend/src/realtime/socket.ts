@@ -9,7 +9,8 @@ export type RealtimeEvent =
   | 'stock:updated'
   | 'product:changed'
   | 'shipment:updated'
-  | 'return:created';
+  | 'return:created'
+  | 'expense:changed';
 
 let io: Server | null = null;
 

@@ -6,6 +6,7 @@ import { TransactionsPage } from '@/features/transactions/TransactionsPage';
 import { CustomersPage } from '@/features/customers/CustomersPage';
 import { DeliveryPage } from '@/features/delivery/DeliveryPage';
 import { ReturnsPage } from '@/features/returns/ReturnsPage';
+import { ReportsPage } from '@/features/reports/ReportsPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { ProtectedRoute } from '@/app/ProtectedRoute';
 import { RoleRoute } from '@/app/RoleRoute';
@@ -19,7 +20,7 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
  * Public:            /login
  * Authenticated:     everything under ProtectedRoute + AppLayout
  *   Shared:          products, transactions history
- *   OWNER-only:      dashboard, customers, delivery, returns
+ *   OWNER-only:      dashboard, customers, delivery, returns, reports
  *   CASHIER-only:    pos
  */
 function App() {
@@ -43,6 +44,7 @@ function App() {
             <Route path="/customers" element={<CustomersPage />} />
             <Route path="/delivery" element={<DeliveryPage />} />
             <Route path="/returns" element={<ReturnsPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
           </Route>
 
           {/* Cashier area */}

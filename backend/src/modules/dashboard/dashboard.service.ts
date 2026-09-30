@@ -35,6 +35,7 @@ export async function getSummary() {
     deliveryStatusGroups,
     customersTotal,
     todayReturnItems,
+    expensesTodayAgg,
   ] = await Promise.all([
     prisma.transaction.aggregate({
       where: { createdAt: { gte: todayStart } },
@@ -86,6 +87,10 @@ export async function getSummary() {
       where: { return: { createdAt: { gte: todayStart } } },
       select: { quantity: true, transactionItem: { select: { sellPriceSnapshot: true } } },
     }),
+    prisma.expense.aggregate({
+      where: { occurredAt: { gte: todayStart } },
+      _sum: { amount: true },
+    }),
   ]);
 
   const totalStock = products.reduce((sum, p) => sum + p.stock, 0);
@@ -110,6 +115,7 @@ export async function getSummary() {
       last7: (last7Agg._sum.total ?? 0).toString(),
       month: (monthAgg._sum.total ?? 0).toString(),
       moneyOutToday: moneyOutToday.toString(),
+      expensesToday: (expensesTodayAgg._sum.amount ?? 0).toString(),
     },
     products: {
       total: products.length,
