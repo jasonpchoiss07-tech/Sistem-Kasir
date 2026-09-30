@@ -76,13 +76,6 @@ npm run prisma:seed       # buat akun awal (idempotent)
 npm run prisma:studio     # (opsional) GUI lihat data di browser
 ```
 
-### Akun hasil seed (development)
-
-| Role  | Username | Password  |
-|-------|----------|-----------|
-| Owner | `owner`  | `owner123` |
-| Kasir | `kasir`  | `kasir123` |
-
 > Password disimpan sebagai hash bcrypt, bukan plaintext. Ganti kredensial ini
 > sebelum dipakai di lingkungan nyata/production.
 
