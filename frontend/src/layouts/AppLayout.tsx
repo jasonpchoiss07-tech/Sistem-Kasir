@@ -76,7 +76,7 @@ export function AppLayout() {
             <Menu className="h-5 w-5" />
           </button>
           <div className="lg:hidden">
-            <span className="text-sm font-semibold text-slate-900">POS Toko Bangunan</span>
+            <span className="text-sm font-semibold text-slate-900">Sentral Bangunan</span>
           </div>
           <div className="ml-auto flex items-center gap-3">
             {canInstall && (
@@ -111,7 +111,7 @@ function Brand() {
       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
         <Store className="h-4 w-4" />
       </div>
-      <span className="text-sm font-bold tracking-tight text-slate-900">POS Bangunan</span>
+      <span className="text-sm font-bold tracking-tight text-slate-900">Sentral Bangunan</span>
     </div>
   );
 }

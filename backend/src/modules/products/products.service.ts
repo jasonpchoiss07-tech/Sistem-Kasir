@@ -143,3 +143,26 @@ export async function listAdjustments(productId: string) {
     include: { user: { select: { id: true, name: true, username: true } } },
   });
 }
+
+/**
+ * Hard-deletes a product. Refused if it is referenced by any transaction
+ * (transaction history must be preserved). Stock adjustment logs for the
+ * product are removed alongside it.
+ */
+export async function deleteProduct(id: string) {
+  const product = await prisma.product.findUnique({
+    where: { id },
+    include: { _count: { select: { transactionItems: true } } },
+  });
+  if (!product) throw ApiError.notFound('Produk tidak ditemukan');
+  if (product._count.transactionItems > 0) {
+    throw ApiError.conflict(
+      'Produk sudah dipakai pada transaksi sehingga tidak bisa dihapus (riwayat harus tetap utuh).',
+    );
+  }
+  await prisma.$transaction([
+    prisma.stockAdjustment.deleteMany({ where: { productId: id } }),
+    prisma.product.delete({ where: { id } }),
+  ]);
+  return { id };
+}

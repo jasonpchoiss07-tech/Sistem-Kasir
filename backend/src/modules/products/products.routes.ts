@@ -18,6 +18,7 @@ router.get('/:id/stock-adjustments', requireOwner, asyncHandler(productsControll
 // Mutations: OWNER only (authorization enforced here on the backend).
 router.post('/', requireOwner, asyncHandler(productsController.create));
 router.patch('/:id', requireOwner, asyncHandler(productsController.update));
+router.delete('/:id', requireOwner, asyncHandler(productsController.remove));
 router.post(
   '/:id/stock-adjustments',
   requireOwner,

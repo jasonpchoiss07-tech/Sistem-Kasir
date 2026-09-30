@@ -42,6 +42,10 @@ export function updateProduct(id: string, body: Partial<ProductInput>) {
   }).then((d) => d.product);
 }
 
+export function deleteProduct(id: string) {
+  return apiRequest<{ id: string }>(`/products/${id}`, { method: 'DELETE' });
+}
+
 export function adjustStock(
   id: string,
   body: { type: StockAdjustmentType; quantityChange: number; note?: string | null },

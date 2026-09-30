@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Search, Package, Boxes, Pencil, Power } from 'lucide-react';
+import { Plus, Search, Package, Boxes, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '@/store/auth';
 import { useSocketEvent } from '@/hooks/useSocketEvent';
 import { formatRupiah } from '@/lib/format';
@@ -12,9 +12,10 @@ import {
   EmptyState,
   PageHeader,
   Spinner,
+  ConfirmDialog,
 } from '@/components/ui';
 import type { Product } from '@/types/product';
-import { listProducts, updateProduct, type ListParams } from './products.api';
+import { listProducts, deleteProduct, type ListParams } from './products.api';
 import { ProductFormModal } from './ProductFormModal';
 import { StockAdjustModal } from './StockAdjustModal';
 
@@ -35,6 +36,11 @@ export function ProductsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [stockTarget, setStockTarget] = useState<Product | null>(null);
+
+  // Delete confirmation state.
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,15 +68,6 @@ export function ProductsPage() {
   useSocketEvent('product:changed', load);
   useSocketEvent('transaction:created', load);
 
-  async function toggleActive(p: Product) {
-    try {
-      await updateProduct(p.id, { isActive: !p.isActive });
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal mengubah status.');
-    }
-  }
-
   function openCreate() {
     setEditing(null);
     setFormOpen(true);
@@ -78,6 +75,25 @@ export function ProductsPage() {
   function openEdit(p: Product) {
     setEditing(p);
     setFormOpen(true);
+  }
+  function askDelete(p: Product) {
+    setDeleteError(null);
+    setDeleteTarget(p);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteProduct(deleteTarget.id);
+      setDeleteTarget(null);
+      await load();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Gagal menghapus produk.');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -159,7 +175,7 @@ export function ProductsPage() {
               isOwner={isOwner}
               onEdit={() => openEdit(p)}
               onStock={() => setStockTarget(p)}
-              onToggle={() => toggleActive(p)}
+              onDelete={() => askDelete(p)}
             />
           ))}
         </div>
@@ -185,6 +201,20 @@ export function ProductsPage() {
               void load();
             }}
           />
+          <ConfirmDialog
+            open={Boolean(deleteTarget)}
+            title="Hapus Produk"
+            description={
+              deleteTarget
+                ? `Yakin hapus produk "${deleteTarget.name}"? Tindakan ini tidak bisa dibatalkan.`
+                : undefined
+            }
+            confirmLabel="Ya, Hapus"
+            loading={deleting}
+            error={deleteError}
+            onConfirm={confirmDelete}
+            onClose={() => setDeleteTarget(null)}
+          />
         </>
       )}
     </div>
@@ -196,13 +226,13 @@ function ProductCard({
   isOwner,
   onEdit,
   onStock,
-  onToggle,
+  onDelete,
 }: {
   product: Product;
   isOwner: boolean;
   onEdit: () => void;
   onStock: () => void;
-  onToggle: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div className="flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -240,13 +270,8 @@ function ProductCard({
               <Boxes className="h-4 w-4" />
               Stok
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggle}
-              title={product.isActive ? 'Nonaktifkan' : 'Aktifkan'}
-            >
-              <Power className={product.isActive ? 'h-4 w-4 text-green-600' : 'h-4 w-4 text-slate-400'} />
+            <Button variant="ghost" size="sm" onClick={onDelete} title="Hapus produk">
+              <Trash2 className="h-4 w-4 text-red-500" />
             </Button>
           </div>
         )}

@@ -13,9 +13,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png', 'icons/favicon-64.png'],
       manifest: {
-        name: 'POS Toko Bangunan',
-        short_name: 'POS Bangunan',
-        description: 'Sistem kasir toko bangunan',
+        name: 'Sentral Bangunan',
+        short_name: 'Sentral Bangunan',
+        description: 'Sistem kasir Sentral Bangunan',
         theme_color: '#0f172a',
         background_color: '#f1f5f9',
         display: 'standalone',

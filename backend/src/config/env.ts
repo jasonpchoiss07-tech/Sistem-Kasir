@@ -28,7 +28,7 @@ export const env = {
     expiresIn: process.env.JWT_EXPIRES_IN ?? '12h',
   },
   // Store name shown on receipts (configurable via env; store settings UI comes later).
-  storeName: process.env.STORE_NAME ?? 'POS Toko Bangunan',
+  storeName: process.env.STORE_NAME ?? 'Sentral Bangunan',
   // Supabase Storage for product images. When SUPABASE_URL is set, uploads go to
   // object storage (needed on serverless/Vercel). Otherwise files are saved to
   // the local uploads/ folder (development).

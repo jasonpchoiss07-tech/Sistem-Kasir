@@ -92,6 +92,19 @@ export async function listAdjustments(req: Request, res: Response): Promise<void
   res.json({ success: true, data: { adjustments } });
 }
 
+/** DELETE /api/products/:id (OWNER) */
+export async function remove(req: Request, res: Response): Promise<void> {
+  const result = await productsService.deleteProduct(req.params.id);
+  emitRealtime('product:changed', { id: req.params.id });
+  await recordAudit({
+    userId: req.user?.id,
+    action: 'PRODUCT_DELETE',
+    entity: 'Product',
+    entityId: req.params.id,
+  });
+  res.json({ success: true, data: result });
+}
+
 /** POST /api/products/upload (OWNER). Uploads to storage, returns the file URL. */
 export async function upload(req: Request, res: Response): Promise<void> {
   if (!req.file) {
