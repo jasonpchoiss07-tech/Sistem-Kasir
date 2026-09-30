@@ -30,7 +30,7 @@ export interface DashboardSummary {
     pending: TransactionListItem[];
     statusCounts: Record<string, number>;
   };
-  customers: { total: number };
+  transactions: { total: number };
 }
 
 export function getDashboardSummary() {

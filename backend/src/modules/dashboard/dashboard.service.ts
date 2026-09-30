@@ -33,7 +33,7 @@ export async function getSummary() {
     recentReturns,
     pendingDeliveries,
     deliveryStatusGroups,
-    customersTotal,
+    transactionsTotalCount,
     todayReturnItems,
     expensesTodayAgg,
   ] = await Promise.all([
@@ -82,7 +82,7 @@ export async function getSummary() {
       include: recentTransactionInclude,
     }),
     prisma.shipment.groupBy({ by: ['shipmentStatus'], _count: true }),
-    prisma.customer.count(),
+    prisma.transaction.count(),
     prisma.returnItem.findMany({
       where: { return: { createdAt: { gte: todayStart } } },
       select: { quantity: true, transactionItem: { select: { sellPriceSnapshot: true } } },
@@ -129,6 +129,6 @@ export async function getSummary() {
       pending: pendingDeliveries,
       statusCounts: deliveryStatusCounts,
     },
-    customers: { total: customersTotal },
+    transactions: { total: transactionsTotalCount },
   };
 }

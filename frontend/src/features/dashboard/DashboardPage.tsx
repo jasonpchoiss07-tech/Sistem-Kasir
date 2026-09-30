@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   Undo2,
   Truck,
-  Users,
   ArrowDownCircle,
   Wallet,
   type LucideIcon,
@@ -164,16 +163,16 @@ export function DashboardPage() {
           )}
         </Card>
 
-        {/* Customers */}
+        {/* Total transactions */}
         <Card>
-          <SectionTitle icon={Users} title="Pelanggan" to="/customers" />
+          <SectionTitle icon={Receipt} title="Total Transaksi" to="/transactions" />
           <div className="flex items-center gap-3 py-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-              <Users className="h-6 w-6 text-slate-500" />
+              <Receipt className="h-6 w-6 text-slate-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-900">{data.customers.total}</p>
-              <p className="text-sm text-slate-500">total pelanggan terdaftar</p>
+              <p className="text-2xl font-bold text-slate-900">{data.transactions.total}</p>
+              <p className="text-sm text-slate-500">total transaksi keseluruhan</p>
             </div>
           </div>
         </Card>
