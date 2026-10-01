@@ -18,9 +18,14 @@ export const checkoutSchema = z
   .object({
     type: z.enum(['BELI_LANGSUNG', 'PENGIRIMAN']),
     items: z.array(itemSchema).min(1, 'Keranjang tidak boleh kosong'),
+    // Nullable/optional to support UNPAID delivery orders (no cash received yet).
     cashReceived: z
       .number({ invalid_type_error: 'Uang tunai harus berupa angka' })
-      .nonnegative('Uang tunai tidak boleh negatif'),
+      .nonnegative('Uang tunai tidak boleh negatif')
+      .optional()
+      .nullable(),
+    // Only meaningful for PENGIRIMAN. Defaults to PAID when omitted.
+    paymentStatus: z.enum(['PAID', 'UNPAID']).optional(),
     customer: customerSchema.optional().nullable(),
   })
   .refine(

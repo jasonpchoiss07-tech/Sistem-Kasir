@@ -3,7 +3,10 @@ import type { ReceiptPayload, TransactionType } from '@/types/transaction';
 
 export interface CheckoutBody {
   type: TransactionType;
-  cashReceived: number;
+  /** Null for UNPAID delivery orders (no cash received yet). */
+  cashReceived?: number | null;
+  /** Only used for PENGIRIMAN. Defaults to PAID on the server when omitted. */
+  paymentStatus?: 'PAID' | 'UNPAID';
   items: { productId: string; quantity: number }[];
   customer?: { name: string; address: string; whatsapp?: string | null } | null;
 }

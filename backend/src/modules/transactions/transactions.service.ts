@@ -50,12 +50,20 @@ export async function checkout(input: CheckoutInput, cashierId: string) {
   });
 
   const total = lines.reduce((sum, l) => sum.plus(l.subtotal), new Prisma.Decimal(0));
-  const cash = new Prisma.Decimal(input.cashReceived);
 
-  if (cash.lessThan(total)) {
-    throw ApiError.badRequest(`Uang tunai kurang. Total belanja Rp${total.toFixed(0)}.`);
+  // UNPAID is only allowed for delivery orders (goods shipped before payment).
+  // When unpaid we don't require cash and store cashReceived/change as null.
+  const isUnpaid = input.type === 'PENGIRIMAN' && input.paymentStatus === 'UNPAID';
+  let cashReceivedValue: Prisma.Decimal | null = null;
+  let change: Prisma.Decimal | null = null;
+  if (!isUnpaid) {
+    const cash = new Prisma.Decimal(input.cashReceived ?? 0);
+    if (cash.lessThan(total)) {
+      throw ApiError.badRequest(`Uang tunai kurang. Total belanja Rp${total.toFixed(0)}.`);
+    }
+    cashReceivedValue = cash;
+    change = cash.minus(total);
   }
-  const change = cash.minus(total);
 
   return prisma.$transaction(async (tx) => {
     // Serialize per-day number generation to keep trxNumber unique under load.
@@ -105,7 +113,7 @@ export async function checkout(input: CheckoutInput, cashierId: string) {
         trxNumber,
         type: input.type,
         total,
-        cashReceived: cash,
+        cashReceived: cashReceivedValue,
         change,
         cashierId,
         customerId,
@@ -122,7 +130,10 @@ export async function checkout(input: CheckoutInput, cashierId: string) {
         ...(input.type === 'PENGIRIMAN'
           ? {
               shipment: {
-                create: { paymentStatus: 'PAID', shipmentStatus: 'MENUNGGU_DIKIRIM' },
+                create: {
+                  paymentStatus: isUnpaid ? 'UNPAID' : 'PAID',
+                  shipmentStatus: 'MENUNGGU_DIKIRIM',
+                },
               },
             }
           : {}),

@@ -1,7 +1,7 @@
 import { Printer, CheckCircle2 } from 'lucide-react';
 import { Modal, Button } from '@/components/ui';
 import type { ReceiptPayload } from '@/types/transaction';
-import { ReceiptDocument } from './ReceiptDocument';
+import { ReceiptDocument, type ReceiptVariant } from './ReceiptDocument';
 
 interface Props {
   open: boolean;
@@ -19,6 +19,28 @@ interface Props {
  */
 export function ReceiptView({ open, payload, onClose, onNewTransaction, showSuccess }: Props) {
   if (!payload) return null;
+
+  const t = payload.transaction;
+  const isDelivery = t.type === 'PENGIRIMAN';
+  const isUnpaid = t.shipment?.paymentStatus === 'UNPAID';
+
+  // Which documents get printed (and previewed):
+  //  - Delivery + unpaid → BON for the customer + normal receipt (store/delivery copy)
+  //  - Delivery + paid   → 2 normal receipts (customer + store/delivery copy)
+  //  - Direct sale       → 1 normal receipt
+  const docs: { variant: ReceiptVariant; label?: string }[] = isDelivery
+    ? isUnpaid
+      ? [
+          { variant: 'BON', label: 'Lembar Pelanggan (Bon)' },
+          { variant: 'RECEIPT', label: 'Arsip Toko — Kirim Barang' },
+        ]
+      : [
+          { variant: 'RECEIPT', label: 'Lembar Pelanggan' },
+          { variant: 'RECEIPT', label: 'Arsip Toko — Kirim Barang' },
+        ]
+    : [{ variant: 'RECEIPT' }];
+
+  const paidLabel = isUnpaid ? 'Tersimpan — Belum Bayar' : 'Pembayaran diterima';
 
   return (
     <Modal
@@ -38,13 +60,25 @@ export function ReceiptView({ open, payload, onClose, onNewTransaction, showSucc
       }
     >
       {showSuccess && (
-        <div className="mb-3 flex items-center gap-2 text-green-600 no-print">
+        <div
+          className={
+            'mb-3 flex items-center gap-2 no-print ' +
+            (isUnpaid ? 'text-amber-600' : 'text-green-600')
+          }
+        >
           <CheckCircle2 className="h-5 w-5" />
-          <span className="text-sm font-medium">Pembayaran diterima</span>
+          <span className="text-sm font-medium">{paidLabel}</span>
         </div>
       )}
 
-      <ReceiptDocument payload={payload} />
+      <div className="print-area">
+        {docs.map((d, i) => (
+          <div key={i} className={i > 0 ? 'receipt-copy-break' : undefined}>
+            {i > 0 && <div className="my-4 border-t-2 border-dashed border-slate-300 no-print" />}
+            <ReceiptDocument payload={payload} variant={d.variant} copyLabel={d.label} />
+          </div>
+        ))}
+      </div>
     </Modal>
   );
 }

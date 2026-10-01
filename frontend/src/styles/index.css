@@ -9,19 +9,29 @@
   body * {
     visibility: hidden;
   }
-  .receipt-print,
-  .receipt-print * {
+  /* The print container holds one or more receipts (e.g. BON + store copy). */
+  .print-area,
+  .print-area * {
     visibility: visible;
   }
-  .receipt-print {
+  .print-area {
     position: absolute;
     left: 0;
     top: 0;
+    width: 72mm;
+  }
+  .receipt-print {
     width: 72mm;
     padding: 0;
     margin: 0;
     color: #000 !important;
     font-family: ui-monospace, "Courier New", monospace;
+    break-inside: avoid;
+  }
+  /* Each additional copy starts on a new page/slip. */
+  .receipt-copy-break {
+    page-break-before: always;
+    break-before: page;
   }
   .no-print {
     display: none !important;
