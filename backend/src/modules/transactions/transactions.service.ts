@@ -131,6 +131,11 @@ export async function checkout(input: CheckoutInput, cashierId: string) {
     });
 
     return transaction;
+  }, {
+    // Serverless → Supabase pooler has network latency; the default 5s window
+    // can expire mid-checkout. Allow more time to start and run the transaction.
+    maxWait: 15000,
+    timeout: 20000,
   });
 }
 

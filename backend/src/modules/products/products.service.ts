@@ -130,6 +130,10 @@ export async function adjustStock(
     });
 
     return { product: withLowStock(product), adjustment };
+  }, {
+    // Serverless → Supabase pooler latency headroom (default is 5s).
+    maxWait: 15000,
+    timeout: 20000,
   });
 }
 

@@ -72,6 +72,11 @@ export async function createReturn(input: CreateReturnInput, ownerId: string) {
     }
 
     return getReturnById(tx, created.id);
+  }, {
+    // Serverless → Supabase pooler latency: raise the interactive-transaction
+    // window above the default 5s so a slow round-trip won't abort the return.
+    maxWait: 15000,
+    timeout: 20000,
   });
 }
 
