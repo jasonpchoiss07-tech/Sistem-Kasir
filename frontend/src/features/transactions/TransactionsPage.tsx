@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Receipt, Search, Printer, Undo2 } from 'lucide-react';
+import { Receipt, Search, Printer, Undo2, CheckSquare, Square } from 'lucide-react';
 import { useAuth } from '@/store/auth';
 import { useSocketEvent } from '@/hooks/useSocketEvent';
 import { Input, Alert, Spinner, Badge, EmptyState, PageHeader, Modal, Button } from '@/components/ui';
@@ -13,7 +13,7 @@ import {
 import type { ReceiptPayload, TransactionListItem, TransactionType } from '@/types/transaction';
 import { ReceiptView } from '@/features/pos/ReceiptView';
 import { ReturnModal } from '@/features/returns/ReturnModal';
-import { listTransactions, getTransaction, type HistoryParams } from './transactions.api';
+import { listTransactions, getTransaction, updateShipment, type HistoryParams } from './transactions.api';
 
 type View = 'none' | 'detail' | 'receipt' | 'return';
 
@@ -32,6 +32,8 @@ export function TransactionsPage() {
 
   const [payload, setPayload] = useState<ReceiptPayload | null>(null);
   const [view, setView] = useState<View>('none');
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,6 +63,7 @@ export function TransactionsPage() {
 
   async function openDetail(id: string) {
     try {
+      setStatusError(null);
       setPayload(await getTransaction(id));
       setView('detail');
     } catch (err) {
@@ -71,6 +74,46 @@ export function TransactionsPage() {
   async function refreshDetail() {
     if (!payload) return;
     setPayload(await getTransaction(payload.transaction.id));
+  }
+
+  // Independent toggles for delivery orders: shipped (sudah dikirim) and
+  // paid (sudah dibayar). Each flips its own status without touching the other.
+  async function toggleShipped() {
+    const sh = payload?.transaction.shipment;
+    const id = payload?.transaction.id;
+    if (!sh || !id) return;
+    const isShipped = sh.shipmentStatus === 'SUDAH_DIKIRIM';
+    setSavingStatus(true);
+    setStatusError(null);
+    try {
+      await updateShipment(id, {
+        shipmentStatus: isShipped ? 'MENUNGGU_DIKIRIM' : 'SUDAH_DIKIRIM',
+      });
+      await refreshDetail();
+      await load();
+    } catch (err) {
+      setStatusError(err instanceof Error ? err.message : 'Gagal mengubah status kirim.');
+    } finally {
+      setSavingStatus(false);
+    }
+  }
+
+  async function togglePaid() {
+    const sh = payload?.transaction.shipment;
+    const id = payload?.transaction.id;
+    if (!sh || !id) return;
+    const isPaid = sh.paymentStatus === 'PAID';
+    setSavingStatus(true);
+    setStatusError(null);
+    try {
+      await updateShipment(id, { paymentStatus: isPaid ? 'UNPAID' : 'PAID' });
+      await refreshDetail();
+      await load();
+    } catch (err) {
+      setStatusError(err instanceof Error ? err.message : 'Gagal mengubah status bayar.');
+    } finally {
+      setSavingStatus(false);
+    }
   }
 
   const t = payload?.transaction;
@@ -235,13 +278,30 @@ export function TransactionsPage() {
                 <p className="font-medium text-slate-800">{t.customer.name}</p>
                 <p className="text-xs text-slate-500">{t.customer.address}</p>
                 {t.shipment && (
-                  <div className="mt-1 flex gap-2">
-                    <Badge variant={PAYMENT_STATUS_VARIANT[t.shipment.paymentStatus]}>
-                      {PAYMENT_STATUS_LABEL[t.shipment.paymentStatus]}
-                    </Badge>
-                    <Badge variant={SHIPMENT_STATUS_VARIANT[t.shipment.shipmentStatus]}>
-                      {SHIPMENT_STATUS_LABEL[t.shipment.shipmentStatus]}
-                    </Badge>
+                  <div className="mt-2 flex flex-col gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant={PAYMENT_STATUS_VARIANT[t.shipment.paymentStatus]}>
+                        {PAYMENT_STATUS_LABEL[t.shipment.paymentStatus]}
+                      </Badge>
+                      <Badge variant={SHIPMENT_STATUS_VARIANT[t.shipment.shipmentStatus]}>
+                        {SHIPMENT_STATUS_LABEL[t.shipment.shipmentStatus]}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <StatusToggle
+                        checked={t.shipment.shipmentStatus === 'SUDAH_DIKIRIM'}
+                        label="Sudah Dikirim"
+                        onClick={toggleShipped}
+                        disabled={savingStatus}
+                      />
+                      <StatusToggle
+                        checked={t.shipment.paymentStatus === 'PAID'}
+                        label="Sudah Dibayar"
+                        onClick={togglePaid}
+                        disabled={savingStatus}
+                      />
+                    </div>
+                    {statusError && <p className="text-xs text-red-500">{statusError}</p>}
                   </div>
                 )}
               </div>
@@ -301,5 +361,36 @@ export function TransactionsPage() {
         }}
       />
     </div>
+  );
+}
+
+/** Checkbox-style toggle button for a delivery status flag. */
+function StatusToggle({
+  checked,
+  label,
+  onClick,
+  disabled,
+}: {
+  checked: boolean;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={checked}
+      className={
+        'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ring-1 transition disabled:opacity-50 ' +
+        (checked
+          ? 'bg-green-600 text-white ring-green-600'
+          : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50')
+      }
+    >
+      {checked ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
+      {label}
+    </button>
   );
 }
