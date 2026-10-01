@@ -115,6 +115,9 @@ export async function checkout(input: CheckoutInput, cashierId: string) {
         total,
         cashReceived: cashReceivedValue,
         change,
+        // Revenue is recognized when paid. Unpaid delivery orders stay null
+        // until marked paid (then it counts toward that day's revenue).
+        paidAt: isUnpaid ? null : now,
         cashierId,
         customerId,
         items: {
@@ -197,18 +200,36 @@ export async function listTransactions(query: ListTransactionsQuery) {
   });
 }
 
-/** Updates shipment and/or payment status for a delivery transaction. */
+/**
+ * Updates shipment and/or payment status for a delivery transaction.
+ *
+ * When the payment status changes, the transaction's `paidAt` is kept in sync
+ * so revenue recognition follows payment: marking PAID stamps the current time
+ * (counts toward today's revenue), marking UNPAID clears it (moves to piutang).
+ */
 export async function updateShipment(transactionId: string, input: ShipmentUpdateInput) {
   const shipment = await prisma.shipment.findUnique({ where: { transactionId } });
   if (!shipment) {
     throw ApiError.notFound('Transaksi ini tidak memiliki data pengiriman');
   }
 
-  return prisma.shipment.update({
-    where: { transactionId },
-    data: {
-      ...(input.shipmentStatus !== undefined ? { shipmentStatus: input.shipmentStatus } : {}),
-      ...(input.paymentStatus !== undefined ? { paymentStatus: input.paymentStatus } : {}),
-    },
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.shipment.update({
+      where: { transactionId },
+      data: {
+        ...(input.shipmentStatus !== undefined ? { shipmentStatus: input.shipmentStatus } : {}),
+        ...(input.paymentStatus !== undefined ? { paymentStatus: input.paymentStatus } : {}),
+      },
+    });
+
+    if (input.paymentStatus === 'PAID' && shipment.paymentStatus !== 'PAID') {
+      // Newly paid → recognize revenue now.
+      await tx.transaction.update({ where: { id: transactionId }, data: { paidAt: new Date() } });
+    } else if (input.paymentStatus === 'UNPAID') {
+      // Reverted to unpaid → remove from revenue (back to piutang).
+      await tx.transaction.update({ where: { id: transactionId }, data: { paidAt: null } });
+    }
+
+    return updated;
   });
 }

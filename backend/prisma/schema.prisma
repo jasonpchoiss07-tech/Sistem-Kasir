@@ -150,6 +150,9 @@ model Transaction {
   cashReceived Decimal?        @db.Decimal(14, 2)
   change       Decimal?        @db.Decimal(14, 2)
   createdAt    DateTime        @default(now())
+  // When payment was received. Null while unpaid (delivery orders). Revenue is
+  // recognized on this date, so an unpaid order only counts once marked paid.
+  paidAt       DateTime?
 
   cashierId  String
   cashier    User      @relation("CashierTransactions", fields: [cashierId], references: [id], onDelete: Restrict)
@@ -162,6 +165,7 @@ model Transaction {
 
   @@index([type])
   @@index([createdAt])
+  @@index([paidAt])
   @@index([cashierId])
   @@index([customerId])
 }

@@ -15,7 +15,7 @@ export interface DashboardSummary {
     today: { amount: string; count: number; itemsSold: number };
     last7: string;
     month: string;
-    moneyOutToday: string;
+    outstanding: string;
     expensesToday: string;
   };
   products: {

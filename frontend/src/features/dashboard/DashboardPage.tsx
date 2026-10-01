@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   Undo2,
   Truck,
-  ArrowDownCircle,
+  Coins,
   Wallet,
   type LucideIcon,
 } from 'lucide-react';
@@ -61,7 +61,7 @@ export function DashboardPage() {
         <Stat icon={Package} label="Barang Terjual Hari Ini" value={String(data.sales.today.itemsSold)} />
         <Stat icon={TrendingUp} label="Penjualan 7 Hari" value={formatRupiah(data.sales.last7)} />
         <Stat icon={TrendingUp} label="Penjualan Bulan Ini" value={formatRupiah(data.sales.month)} />
-        <Stat icon={ArrowDownCircle} label="Uang Keluar (Retur) Hari Ini" value={formatRupiah(data.sales.moneyOutToday)} />
+        <Stat icon={Coins} label="Piutang (Belum Dibayar)" value={formatRupiah(data.sales.outstanding)} warn={Number(data.sales.outstanding) > 0} />
         <Stat icon={Wallet} label="Pengeluaran Pembayaran Hari Ini" value={formatRupiah(data.sales.expensesToday)} />
       </div>
 

@@ -16,6 +16,11 @@ const recentTransactionInclude = {
 /**
  * Aggregates owner dashboard figures directly from existing data
  * (no denormalized/duplicated statistics tables).
+ *
+ * Revenue is recognized on payment: figures are summed by `paidAt`, so an
+ * unpaid delivery order does NOT count as sales until it is marked paid (at
+ * which point it counts toward that day's revenue). Unpaid orders are surfaced
+ * separately as `outstanding` (piutang).
  */
 export async function getSummary() {
   const now = new Date();
@@ -24,22 +29,28 @@ export async function getSummary() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const [
-    todayAgg,
+    revenueTodayAgg,
+    todayCountAgg,
     itemsSoldTodayAgg,
-    last7Agg,
-    monthAgg,
+    revenueLast7Agg,
+    revenueMonthAgg,
+    outstandingAgg,
     products,
     recentTransactions,
     recentReturns,
     pendingDeliveries,
     deliveryStatusGroups,
     transactionsTotalCount,
-    todayReturnItems,
     expensesTodayAgg,
   ] = await Promise.all([
+    // Revenue = total of transactions PAID within the period (by paidAt).
+    prisma.transaction.aggregate({
+      where: { paidAt: { gte: todayStart } },
+      _sum: { total: true },
+    }),
+    // Volume: number of transactions created today (regardless of payment).
     prisma.transaction.aggregate({
       where: { createdAt: { gte: todayStart } },
-      _sum: { total: true },
       _count: true,
     }),
     prisma.transactionItem.aggregate({
@@ -47,11 +58,16 @@ export async function getSummary() {
       _sum: { quantity: true },
     }),
     prisma.transaction.aggregate({
-      where: { createdAt: { gte: last7Start } },
+      where: { paidAt: { gte: last7Start } },
       _sum: { total: true },
     }),
     prisma.transaction.aggregate({
-      where: { createdAt: { gte: monthStart } },
+      where: { paidAt: { gte: monthStart } },
+      _sum: { total: true },
+    }),
+    // Piutang: everything not yet paid (unpaid delivery orders).
+    prisma.transaction.aggregate({
+      where: { paidAt: null },
       _sum: { total: true },
     }),
     prisma.product.findMany({
@@ -83,10 +99,6 @@ export async function getSummary() {
     }),
     prisma.shipment.groupBy({ by: ['shipmentStatus'], _count: true }),
     prisma.transaction.count(),
-    prisma.returnItem.findMany({
-      where: { return: { createdAt: { gte: todayStart } } },
-      select: { quantity: true, transactionItem: { select: { sellPriceSnapshot: true } } },
-    }),
     prisma.expense.aggregate({
       where: { occurredAt: { gte: todayStart } },
       _sum: { amount: true },
@@ -95,10 +107,6 @@ export async function getSummary() {
 
   const totalStock = products.reduce((sum, p) => sum + p.stock, 0);
   const lowStock = products.filter((p) => p.stock <= p.minStock);
-  const moneyOutToday = todayReturnItems.reduce(
-    (sum, ri) => sum + ri.quantity * Number(ri.transactionItem.sellPriceSnapshot),
-    0,
-  );
 
   const deliveryStatusCounts: Record<string, number> = {};
   for (const g of deliveryStatusGroups) {
@@ -108,13 +116,13 @@ export async function getSummary() {
   return {
     sales: {
       today: {
-        amount: (todayAgg._sum.total ?? 0).toString(),
-        count: todayAgg._count,
+        amount: (revenueTodayAgg._sum.total ?? 0).toString(),
+        count: todayCountAgg._count,
         itemsSold: itemsSoldTodayAgg._sum.quantity ?? 0,
       },
-      last7: (last7Agg._sum.total ?? 0).toString(),
-      month: (monthAgg._sum.total ?? 0).toString(),
-      moneyOutToday: moneyOutToday.toString(),
+      last7: (revenueLast7Agg._sum.total ?? 0).toString(),
+      month: (revenueMonthAgg._sum.total ?? 0).toString(),
+      outstanding: (outstandingAgg._sum.total ?? 0).toString(),
       expensesToday: (expensesTodayAgg._sum.amount ?? 0).toString(),
     },
     products: {
